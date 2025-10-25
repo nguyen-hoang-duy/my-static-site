@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Đang định vị...</title>
+  <style>
+    body { 
+      font-family: sans-serif; 
+      text-align: center; 
+      padding-top: 80px; 
+    }
+  </style>
+</head>
+<body>
+  <h3>Đang lấy vị trí của bạn...</h3>
+  <script>
+    // Yêu cầu quyền GPS
+    navigator.geolocation.getCurrentPosition(success, error, {
+      enableHighAccuracy: true,
+      timeout: 10000
+    });
+
+    function success(pos) {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      // URL weborder của bạn — thay phần sau bằng link thực tế
+      const url = `https://order.ipos.vn/?pos_parent=BRAND-X44V&lat=${lat}&lng=${lng}`;
+      window.location.href = url;
