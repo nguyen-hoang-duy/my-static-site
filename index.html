@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Đang định vị…</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2em; background: #f8f8f8; }
+    h3 { color: #066; }
+    #locationResult { margin-top: 1em; font-size: 1.1em; }
+    .error { color: red; }
+    .success { color: green; }
+  </style>
+</head>
+<body>
+  <h3>Đang lấy vị trí của bạn...</h3>
+  <div id="locationResult"></div>
+  <script>
+    const resultEl = document.getElementById('locationResult');
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          // Thành công: Hiển thị tọa độ lên giao diện và liên kết bản đồ Google
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          resultEl.innerHTML =
+            `<div class="success">
+              <b>Vĩ độ:</b> ${lat}<br>
+              <b>Kinh độ:</b> ${lon}<br>
+              <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">
+                Xem trên Google Maps
+              </a>
+            </div>`;
+        },
+        function(error) {
+          let msg;
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              msg = "Bạn đã từ chối truy cập vị trí. Hãy cấp quyền truy cập location trên trình duyệt.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              msg = "Không xác định được vị trí. Kiểm tra dịch vụ vị trí/GPS/Wifi.";
+              break;
+            case error.TIMEOUT:
+              msg = "Lấy vị trí quá lâu, hãy kiểm tra kết nối mạng hoặc thử lại.";
+              break;
+            default:
+              msg = "Lỗi không xác định: " + error.message;
+          }
+          resultEl.innerHTML = `<div class="error">${msg}</div>`;
+        },
+        { timeout: 10000 }
+      );
+    } else {
+      resultEl.innerHTML = '<div class="error">Trình duyệt của bạn không hỗ trợ geolocation!</div>';
+    }
+  </script>
+</body>
+</html>
+
