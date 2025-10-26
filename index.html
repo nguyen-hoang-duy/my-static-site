@@ -1,140 +1,59 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Đang định vị...</title>
+  <meta charset="utf-8">
+  <title>Đang định vị…</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { 
-      font-family: sans-serif; 
-      text-align: center; 
-      padding-top: 80px;
-      background: #f5f5f5;
-    }
-    .status {
-      font-size: 18px;
-      color: #333;
-    }
-    .error {
-      color: #d32f2f;
-      margin-top: 20px;
-    }
-    .loading {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid #ccc;
-      border-top-color: #333;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-left: 10px;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    button {
-      margin-top: 20px;
-      padding: 12px 24px;
-      font-size: 16px;
-      background: #1976d2;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #1565c0;
-    }
+    body { font-family: Arial, sans-serif; padding: 2em; background: #f8f8f8; }
+    h3 { color: #066; }
+    #locationResult { margin-top: 1em; font-size: 1.1em; }
+    .error { color: red; }
+    .success { color: green; }
   </style>
 </head>
 <body>
-  <h3 class="status" id="status">Đang lấy vị trí của bạn...</h3>
-  <div class="loading" id="loader"></div>
-  <div id="error-msg" class="error" style="display:none;"></div>
-  <button id="retry-btn" style="display:none;" onclick="getLocation()">Thử lại</button>
-
+  <h3>Đang lấy vị trí của bạn...</h3>
+  <div id="locationResult"></div>
   <script>
-    const STATUS_ELEM = document.getElementById('status');
-    const LOADER_ELEM = document.getElementById('loader');
-    const ERROR_ELEM = document.getElementById('error-msg');
-    const RETRY_BTN = document.getElementById('retry-btn');
-
-    const IPOS_BASE_URL = 'https://order.ipos.vn/?pos_parent=BRAND-X44V';
-
-    function getLocation() {
-      STATUS_ELEM.textContent = 'Đang lấy vị trí của bạn...';
-      LOADER_ELEM.style.display = 'inline-block';
-      ERROR_ELEM.style.display = 'none';
-      RETRY_BTN.style.display = 'none';
-
-      if (!navigator.geolocation) {
-        showError('Trình duyệt của bạn không hỗ trợ GPS.');
-        redirectWithoutGPS();
-        return;
-      }
-
+    const resultEl = document.getElementById('locationResult');
+    if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
-        handleSuccess, 
-        handleError, 
-        {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 0
-        }
+        function(position) {
+          // Thành công: Hiển thị tọa độ lên giao diện và liên kết bản đồ Google
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          resultEl.innerHTML =
+            `<div class="success">
+              <b>Vĩ độ:</b> ${lat}<br>
+              <b>Kinh độ:</b> ${lon}<br>
+              <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">
+                Xem trên Google Maps
+              </a>
+            </div>`;
+        },
+        function(error) {
+          let msg;
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              msg = "Bạn đã từ chối truy cập vị trí. Hãy cấp quyền truy cập location trên trình duyệt.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              msg = "Không xác định được vị trí. Kiểm tra dịch vụ vị trí/GPS/Wifi.";
+              break;
+            case error.TIMEOUT:
+              msg = "Lấy vị trí quá lâu, hãy kiểm tra kết nối mạng hoặc thử lại.";
+              break;
+            default:
+              msg = "Lỗi không xác định: " + error.message;
+          }
+          resultEl.innerHTML = `<div class="error">${msg}</div>`;
+        },
+        { timeout: 10000 }
       );
+    } else {
+      resultEl.innerHTML = '<div class="error">Trình duyệt của bạn không hỗ trợ geolocation!</div>';
     }
-
-    function handleSuccess(pos) {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-      
-      STATUS_ELEM.textContent = 'Đã lấy vị trí! Đang chuyển hướng...';
-      
-      const url = `${IPOS_BASE_URL}&lat=${lat}&lng=${lng}`;
-      console.log('Redirecting to:', url);
-      window.location.href = url;
-    }
-
-    function handleError(err) {
-      console.error('GPS Error:', err);
-      
-      let errorMsg = '';
-      switch(err.code) {
-        case err.PERMISSION_DENIED:
-          errorMsg = 'Bạn đã từ chối quyền truy cập vị trí. Vui lòng cho phép truy cập GPS trong cài đặt trình duyệt.';
-          break;
-        case err.POSITION_UNAVAILABLE:
-          errorMsg = 'Không thể xác định vị trí. Vui lòng kiểm tra kết nối mạng.';
-          break;
-        case err.TIMEOUT:
-          errorMsg = 'Yêu cầu vị trí hết thời gian. Đang thử lại...';
-          break;
-        default:
-          errorMsg = 'Lỗi không xác định khi lấy vị trí.';
-      }
-      
-      showError(errorMsg);
-      setTimeout(redirectWithoutGPS, 3000);
-    }
-
-    function showError(message) {
-      LOADER_ELEM.style.display = 'none';
-      STATUS_ELEM.textContent = 'Không lấy được vị trí';
-      ERROR_ELEM.textContent = message;
-      ERROR_ELEM.style.display = 'block';
-      RETRY_BTN.style.display = 'inline-block';
-    }
-
-    function redirectWithoutGPS() {
-      STATUS_ELEM.textContent = 'Đang chuyển đến trang đặt hàng...';
-      ERROR_ELEM.style.display = 'none';
-      LOADER_ELEM.style.display = 'inline-block';
-      
-      console.log('Redirecting without GPS to:', IPOS_BASE_URL);
-      window.location.href = IPOS_BASE_URL;
-    }
-
-    window.onload = getLocation;
   </script>
 </body>
 </html>
